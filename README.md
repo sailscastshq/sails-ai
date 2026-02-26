@@ -316,4 +316,4 @@ Get the API for a specific provider.
 
 ## License
 
-MIT - [Kelvin Omereshone](https://github.com/DominusKelvin)
+MIT - [The Sailscasts Company](https://github.com/sailscastshq)
