@@ -1,0 +1,29 @@
+{
+  "name": "sails-ai",
+  "version": "0.0.1",
+  "private": true,
+  "description": "AI integration for Sails.",
+  "workspaces": ["packages/*"],
+  "scripts": {
+    "test": "npm run test --workspaces",
+    "build": "npm run build --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sailscastshq/sails-ai"
+  },
+  "keywords": [
+    "sails",
+    "ai",
+    "llm",
+    "slm",
+    "local-ai",
+    "chat"
+  ],
+  "author": "Kelvin Omereshone<kelvin@sailscasts.com>",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

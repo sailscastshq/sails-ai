@@ -1,0 +1,23 @@
+{
+  "name": "@sails-ai/openai",
+  "version": "0.0.1",
+  "description": "OpenAI-compatible adapter for sails-ai — works with OpenAI, Together AI, Groq, Fireworks, and any provider that follows the OpenAI chat completions API.",
+  "main": "index.js",
+  "keywords": [
+    "sails-ai",
+    "adapter",
+    "openai",
+    "together",
+    "groq",
+    "fireworks",
+    "llm"
+  ],
+  "author": "Kelvin Omereshone <kelvin@sailscasts.com>",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "openai": "^4.0.0"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "name": "sails-ai",
+  "version": "0.0.1",
+  "description": "AI integration hook for Sails.js — multi-provider chat completions and data querying.",
+  "main": "index.js",
+  "sails": {
+    "isHook": true,
+    "hookName": "ai"
+  },
+  "keywords": [
+    "sails",
+    "ai",
+    "llm",
+    "chat",
+    "hook"
+  ],
+  "author": "Kelvin Omereshone <kelvin@sailscasts.com>",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
