@@ -1,6 +1,6 @@
 {
   "name": "sails-ai",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "private": true,
   "description": "AI integration for Sails.",
   "workspaces": ["packages/*"],
