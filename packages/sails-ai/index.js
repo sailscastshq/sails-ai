@@ -17,8 +17,9 @@
  *   // Streaming
  *   for await (const chunk of sails.ai.stream('Tell me a story')) { ... }
  *
- *   // Provider switch
- *   const reply = await sails.ai.use('cloudflare').chat('Hello')
+ *   // Provider switch (lazy-loaded on first use)
+ *   const cloudflare = await sails.ai.use('cloudflare')
+ *   const reply = await cloudflare.chat('Hello')
  *
  * Adapters implement the interface (duck typing — no extends required):
  *   - initialize(config)
@@ -139,34 +140,43 @@ function sailsAiHook(sails) {
 
       sails.after(['hook:orm:loaded'], async () => {
         try {
-          // Load and initialize all configured adapters
-          for (const [name, config] of Object.entries(
-            sails.config.ai.providers
-          )) {
-            // Resolve from the app's node_modules (not the hook's)
+          const defaultProvider = sails.config.ai.provider
+
+          // Helper to load and initialize a single provider
+          async function loadProvider(name) {
+            if (adapters[name]) return adapters[name]
+            const config = sails.config.ai.providers[name]
+            if (!config) {
+              throw new Error(
+                `sails-ai: Provider '${name}' is not configured in config/ai.js providers`
+              )
+            }
             const appRequire = require('module').createRequire(
               require('path').join(sails.config.appPath, 'package.json')
             )
             const AdapterImpl = appRequire(config.adapter)
             const adapterConfig = { ...config, log: sails.log }
             const adapter = new AdapterImpl(adapterConfig)
-
-            // Validate the adapter implements the required interface (duck typing)
             validateAdapter(adapter, name)
-
             await adapter.initialize(adapterConfig)
             adapters[name] = adapter
             sails.log.info(`sails-ai: Loaded provider '${name}'`)
+            return adapter
           }
 
-          // Expose the sails.ai API
-          const defaultProvider = sails.config.ai.provider
+          // Eagerly initialize only the default provider
+          await loadProvider(defaultProvider)
+
+          // Expose the sails.ai API — other providers are lazy-loaded on first use()
           const defaultApi = buildApi(getAdapter(defaultProvider))
 
           sails.ai = {
             chat: defaultApi.chat,
             stream: defaultApi.stream,
-            use: (providerName) => buildApi(getAdapter(providerName))
+            use: async (providerName) => {
+              await loadProvider(providerName)
+              return buildApi(getAdapter(providerName))
+            }
           }
 
           cb()
