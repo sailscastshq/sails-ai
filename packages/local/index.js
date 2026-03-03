@@ -24,6 +24,10 @@ class LocalAdapter {
   async initialize(config) {
     this.baseUrl = config.baseUrl || 'http://localhost:11434'
     this.defaultModel = config.model || null
+    this.defaultOptions = config.options || {}
+    // Ollama top-level params — placed at request body root, not nested in options.
+    // Override with [] if your local server doesn't support these.
+    this.topLevelKeys = config.topLevelKeys || ['think', 'format', 'keep_alive', 'tools']
     this.log = config.log || console
 
     try {
@@ -48,12 +52,27 @@ class LocalAdapter {
    * Helper: make a request to Ollama and handle common errors.
    */
   async _fetch(modelId, messages, stream, options = {}) {
+    const body = { model: modelId, messages, stream }
+    const ollamaOptions = {}
+
+    for (const [key, value] of Object.entries(options)) {
+      if (this.topLevelKeys.includes(key)) {
+        body[key] = value
+      } else {
+        ollamaOptions[key] = value
+      }
+    }
+
+    if (Object.keys(ollamaOptions).length > 0) {
+      body.options = ollamaOptions
+    }
+
     let res
     try {
       res = await fetch(`${this.baseUrl}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: modelId, messages, stream, options })
+        body: JSON.stringify(body)
       })
     } catch {
       const error = new Error(
@@ -87,7 +106,7 @@ class LocalAdapter {
    */
   async chat({ messages, model, ...options }) {
     const modelId = model || this.defaultModel || 'qwen2.5:1.5b'
-    const res = await this._fetch(modelId, messages, false, options)
+    const res = await this._fetch(modelId, messages, false, { ...this.defaultOptions, ...options })
     const data = await res.json()
 
     return {
@@ -103,7 +122,7 @@ class LocalAdapter {
    */
   async *stream({ messages, model, ...options }) {
     const modelId = model || this.defaultModel || 'qwen2.5:1.5b'
-    const res = await this._fetch(modelId, messages, true, options)
+    const res = await this._fetch(modelId, messages, true, { ...this.defaultOptions, ...options })
 
     // Ollama streams newline-delimited JSON
     const reader = res.body.getReader()

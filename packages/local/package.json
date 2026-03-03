@@ -1,6 +1,6 @@
 {
   "name": "@sails-ai/local",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Local AI adapter for sails-ai — runs models on your machine via Ollama.",
   "main": "index.js",
   "keywords": [
