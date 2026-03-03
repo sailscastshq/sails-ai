@@ -26,11 +26,13 @@ class OpenAIAdapter {
    */
   async initialize(config) {
     this.defaultModel = config.model || null
+    this.maxRetries = config.maxRetries ?? 3
     this.log = config.log || console
 
     this.client = new OpenAI({
       apiKey: config.apiKey,
-      baseURL: config.baseURL || undefined
+      baseURL: config.baseURL || undefined,
+      maxRetries: 0 // We handle retries ourselves for better control
     })
 
     // Identify the provider for logging
@@ -49,6 +51,22 @@ class OpenAIAdapter {
   }
 
   /**
+   * Check if an error is transient and worth retrying.
+   */
+  _isRetryable(err) {
+    if (err.status === 503 || err.status === 502 || err.status === 429) return true
+    if (err.code === 'ECONNRESET' || err.code === 'ETIMEDOUT') return true
+    return false
+  }
+
+  /**
+   * Sleep for ms milliseconds.
+   */
+  _sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms))
+  }
+
+  /**
    * Send a chat completion request (single response, no streaming).
    */
   async chat({ messages, model, ...options }) {
@@ -61,21 +79,32 @@ class OpenAIAdapter {
       throw error
     }
 
-    try {
-      const response = await this.client.chat.completions.create({
-        model: modelId,
-        messages,
-        ...options
-      })
+    let lastErr
+    for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
+      try {
+        const response = await this.client.chat.completions.create({
+          model: modelId,
+          messages,
+          ...options
+        })
 
-      return {
-        role: 'assistant',
-        content: response.choices[0].message.content || '',
-        model: modelId
+        return {
+          role: 'assistant',
+          content: response.choices[0].message.content || '',
+          model: modelId
+        }
+      } catch (err) {
+        lastErr = err
+        if (attempt < this.maxRetries && this._isRetryable(err)) {
+          const wait = Math.min(1000 * 2 ** attempt, 8000)
+          this.log.warn(`@sails-ai/openai: ${err.status || err.code} — retrying in ${wait}ms (${attempt + 1}/${this.maxRetries})`)
+          await this._sleep(wait)
+          continue
+        }
+        throw this._normalizeError(err, modelId)
       }
-    } catch (err) {
-      throw this._normalizeError(err, modelId)
     }
+    throw this._normalizeError(lastErr, modelId)
   }
 
   /**
@@ -92,17 +121,30 @@ class OpenAIAdapter {
       throw error
     }
 
+    let lastErr
     let stream
-    try {
-      stream = await this.client.chat.completions.create({
-        model: modelId,
-        messages,
-        stream: true,
-        ...options
-      })
-    } catch (err) {
-      throw this._normalizeError(err, modelId)
+    for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
+      try {
+        stream = await this.client.chat.completions.create({
+          model: modelId,
+          messages,
+          stream: true,
+          ...options
+        })
+        break
+      } catch (err) {
+        lastErr = err
+        if (attempt < this.maxRetries && this._isRetryable(err)) {
+          const wait = Math.min(1000 * 2 ** attempt, 8000)
+          this.log.warn(`@sails-ai/openai: ${err.status || err.code} — retrying in ${wait}ms (${attempt + 1}/${this.maxRetries})`)
+          await this._sleep(wait)
+          continue
+        }
+        throw this._normalizeError(err, modelId)
+      }
     }
+
+    if (!stream) throw this._normalizeError(lastErr, modelId)
 
     for await (const chunk of stream) {
       const text = chunk.choices[0]?.delta?.content || ''
