@@ -1,6 +1,6 @@
 {
   "name": "sails-ai",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "AI integration hook for Sails.js — multi-provider chat completions and data querying.",
   "main": "index.js",
   "sails": {
