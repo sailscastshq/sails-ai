@@ -319,6 +319,6 @@ Get the API for a specific provider.
 MIT - [The Sailscasts Company](https://github.com/sailscastshq)
 
 
-## Asynchronous speech (new, unreleased)
+## Asynchronous speech (sails-ai 0.0.3)
 
 Core now supports capability-aware `transcribe`, `synthesize` and `getJob` alongside existing chat/stream. See [the YarnGPT adapter](packages/yarngpt/README.md) for configuration, durable receipts, caller-owned polling, credit settlement and recovery. `await sails.ai.use(name)` returns the provider API; inspect `api.capabilities` before selecting an operation. Speech-only adapters require initialize, a submission operation and getJob; existing chat adapters need no changes. No speech method implies language quality, commercial clearance or training permission.
