@@ -1,6 +1,10 @@
 # @sails-ai/yarngpt
 
-Asynchronous speech adapter for hosted YarnGPT.ai. New package version: **0.0.1**. This implementation is not yet published or evaluated with real audio. No account, credits or training rights are included.
+Asynchronous speech adapter for hosted YarnGPT.ai. New package version: **0.0.1**. Requires sails-ai **0.0.3** or compatible. Contracts are mock-tested; real-audio quality has not been evaluated. No account, credits or training rights are included.
+
+```sh
+npm install sails-ai@0.0.3 @sails-ai/yarngpt@0.0.1
+```
 
 ```js
 // config/ai.js — keep your existing chat provider as the default if needed.

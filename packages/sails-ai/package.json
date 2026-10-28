@@ -1,7 +1,7 @@
 {
   "name": "sails-ai",
-  "version": "0.0.2",
-  "description": "AI integration hook for Sails.js \u2014 multi-provider chat completions and data querying.",
+  "version": "0.0.3",
+  "description": "AI integration hook for Sails.js \u2014 multi-provider chat, streaming and asynchronous speech.",
   "main": "index.js",
   "sails": {
     "isHook": true,
@@ -21,5 +21,9 @@
   },
   "scripts": {
     "test": "node --test test/*.test.js"
-  }
+  },
+  "files": [
+    "index.js",
+    "adapter.js"
+  ]
 }

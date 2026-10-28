@@ -16,5 +16,8 @@
   "files": [
     "index.js",
     "README.md"
-  ]
+  ],
+  "peerDependencies": {
+    "sails-ai": "^0.0.3"
+  }
 }
