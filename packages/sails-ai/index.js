@@ -23,14 +23,14 @@
  *
  * Adapters implement the interface (duck typing — no extends required):
  *   - initialize(config)
- *   - chat({ messages, model })
+ *   - chat({ messages, model }) or transcribe/synthesize plus getJob
  *   - stream({ messages, model })  [optional]
  *   - teardown()                   [optional]
  *
  * @docs https://github.com/sailscastshq/sails-ai
  */
 
-const { validateAdapter } = require('./adapter')
+const { validateAdapter, capabilities } = require('./adapter')
 
 /**
  * Normalize flexible input into { messages, model } for adapters.
@@ -89,16 +89,39 @@ function sailsAiHook(sails) {
    * Build the public API for a given adapter.
    * Handles input normalization so adapters always receive { messages, model }.
    */
-  function buildApi(adapter) {
+  function buildApi(adapter, providerName) {
+    const supported = capabilities(adapter)
+    function requireCapability(operation) {
+      if (!supported[operation]) {
+        const error = new Error(`sails-ai: Provider '${providerName}' does not support ${operation}.`)
+        error.code = 'E_CAPABILITY_UNSUPPORTED'
+        throw error
+      }
+    }
+    async function speech(operation, input, options) {
+      requireCapability(operation)
+      try {
+        const receipt = await adapter[operation](input, options)
+        return { ...receipt, provider: providerName }
+      } catch (error) {
+        if (error.receipt) error.receipt = { ...error.receipt, provider: providerName }
+        throw error
+      }
+    }
     return {
-      chat: (input) => adapter.chat(normalizeInput(input)),
-      stream: (input) => {
-        if (typeof adapter.stream !== 'function') {
-          throw new Error(
-            'sails-ai: This provider does not support streaming. Use chat() instead.'
-          )
+      capabilities: supported,
+      chat: input => { requireCapability('chat'); return adapter.chat(normalizeInput(input)) },
+      stream: input => { requireCapability('stream'); return adapter.stream(normalizeInput(input)) },
+      transcribe: input => speech('transcribe', input),
+      synthesize: input => speech('synthesize', input),
+      getJob: (receipt, options) => {
+        requireCapability('getJob')
+        if (!receipt || receipt.provider !== providerName) {
+          const error = new Error('sails-ai: Job receipt belongs to a different provider.')
+          error.code = 'E_INVALID_INPUT'
+          throw error
         }
-        return adapter.stream(normalizeInput(input))
+        return speech('getJob', receipt, options)
       }
     }
   }
@@ -133,6 +156,9 @@ function sailsAiHook(sails) {
         sails.ai = {
           chat: notConfigured,
           stream: notConfigured,
+          transcribe: notConfigured,
+          synthesize: notConfigured,
+          getJob: notConfigured,
           use: notConfigured
         }
         return cb()
@@ -168,14 +194,13 @@ function sailsAiHook(sails) {
           await loadProvider(defaultProvider)
 
           // Expose the sails.ai API — other providers are lazy-loaded on first use()
-          const defaultApi = buildApi(getAdapter(defaultProvider))
+          const defaultApi = buildApi(getAdapter(defaultProvider), defaultProvider)
 
           sails.ai = {
-            chat: defaultApi.chat,
-            stream: defaultApi.stream,
+            ...defaultApi,
             use: async (providerName) => {
               await loadProvider(providerName)
-              return buildApi(getAdapter(providerName))
+              return buildApi(getAdapter(providerName), providerName)
             }
           }
 

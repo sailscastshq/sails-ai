@@ -3,9 +3,11 @@
   "version": "0.0.4",
   "private": true,
   "description": "AI integration for Sails.",
-  "workspaces": ["packages/*"],
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
-    "test": "npm run test --workspaces",
+    "test": "npm run test --workspaces --if-present",
     "build": "npm run build --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present"
   },

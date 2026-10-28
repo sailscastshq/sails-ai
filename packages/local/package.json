@@ -1,7 +1,7 @@
 {
   "name": "@sails-ai/local",
   "version": "0.0.2",
-  "description": "Local AI adapter for sails-ai — runs models on your machine via Ollama.",
+  "description": "Local AI adapter for sails-ai \u2014 runs models on your machine via Ollama.",
   "main": "index.js",
   "keywords": [
     "sails-ai",
@@ -17,5 +17,8 @@
   },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.js"
   }
 }
