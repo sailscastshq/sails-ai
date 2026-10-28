@@ -1,46 +1,17 @@
-/**
- * Base Adapter
- *
- * Defines the interface contract that all sails-ai adapters must implement.
- * Adapters are responsible for communicating with a specific AI provider
- * (Ollama, Cloudflare, Anthropic, OpenAI, node-llama-cpp, etc.).
- *
- * To create a new adapter:
- * 1. Create a class with initialize(), chat(), and optionally stream() and teardown()
- * 2. Export the class as the package's main export
- *
- * @example
- * class MyAdapter {
- *   async initialize(config) { ... }
- *   async chat({ messages, model }) { ... }
- *   async *stream({ messages, model }) { ... }
- * }
- *
- * module.exports = MyAdapter
- */
-
-/**
- * Validate that an adapter instance implements the required interface.
- * Uses duck typing — no class inheritance required.
- *
- * @param {Object} adapter - The adapter instance to validate
- * @param {string} name - Provider name (for error messages)
- * @throws {Error} If required methods are missing
- */
+/** Adapter contract uses duck typing; no inheritance or dummy chat method. */
+const operations = ['chat', 'stream', 'transcribe', 'synthesize', 'getJob']
+function capabilities(adapter) {
+  return Object.freeze(Object.fromEntries(operations.map(name => [name, typeof adapter[name] === 'function'])))
+}
 function validateAdapter(adapter, name) {
   if (typeof adapter.initialize !== 'function') {
-    throw new Error(
-      `sails-ai: Provider '${name}' must implement initialize(config). ` +
-        'See the adapter docs for the required interface.'
-    )
+    throw new Error(`sails-ai: Provider '${name}' must implement initialize(config).`)
   }
-  if (typeof adapter.chat !== 'function') {
-    throw new Error(
-      `sails-ai: Provider '${name}' must implement chat({ messages, model }). ` +
-        'See the adapter docs for the required interface.'
-    )
+  if (!operations.some(operation => typeof adapter[operation] === 'function')) {
+    throw new Error(`sails-ai: Provider '${name}' must implement at least one supported operation.`)
   }
-  // stream() and teardown() are optional
+  if ((adapter.transcribe || adapter.synthesize) && typeof adapter.getJob !== 'function') {
+    throw new Error(`sails-ai: Speech provider '${name}' must implement getJob(receipt).`)
+  }
 }
-
-module.exports = { validateAdapter }
+module.exports = { validateAdapter, capabilities }

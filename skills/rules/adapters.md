@@ -7,16 +7,14 @@ metadata:
 
 # Building Adapters
 
-Each adapter is a separate npm package that extends the base `Adapter` class.
+Each adapter is a separate npm package. The hook uses duck typing, not a base class or instanceof checks.
 
 ## Adapter interface
 
 ```js
-const { Adapter } = require('sails-ai')
-
-class MyAdapter extends Adapter {
+class MyAdapter {
   async initialize(config) { }        // Required — setup, validate credentials
-  async chat({ messages, model }) { } // Required — return { role, content, model }
+  async chat({ messages, model }) { } // Chat capability — return { role, content, model }
   async *stream({ messages, model }) { } // Optional — yield { text, done }
   async teardown() { }                // Optional — cleanup on sails.lower()
 }
@@ -37,14 +35,12 @@ module.exports = MyAdapter
 }
 ```
 
-**Important:** Use `peerDependencies` for `sails-ai` so the adapter resolves the same `Adapter` class as the hook. This ensures `instanceof` checks work.
+Declare the compatible core version when publishing. No inheritance or instanceof identity is required. Speech-only adapters may implement transcribe/synthesize plus getJob instead of chat; unsupported methods fail with E_CAPABILITY_UNSUPPORTED. See packages/yarngpt/README.md for durable asynchronous receipts.
 
 ## Minimal example
 
 ```js
-const { Adapter } = require('sails-ai')
-
-class MyAdapter extends Adapter {
+class MyAdapter {
   async initialize(config) {
     this.apiKey = config.apiKey
     this.baseUrl = config.baseUrl || 'https://api.provider.com'

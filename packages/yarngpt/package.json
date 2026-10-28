@@ -1,0 +1,20 @@
+{
+  "name": "@sails-ai/yarngpt",
+  "version": "0.0.1",
+  "description": "Asynchronous YarnGPT speech adapter for Sails AI.",
+  "main": "index.js",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  },
+  "files": [
+    "index.js",
+    "README.md"
+  ]
+}
